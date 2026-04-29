@@ -8,12 +8,15 @@ on:
 jobs:
   run_tests:
     name: Run Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Install C++ dependencies
+        run: sudo apt update && sudo apt-get -y install build-essential clang libclang-rt-dev g++ llvm-dev uuid-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev freeglut3-dev zlib1g-dev
 
       - name: Setup flutter
         uses: subosito/flutter-action@v2
@@ -28,7 +31,7 @@ jobs:
       - name: Setup Rive Native
         shell: bash
         run: |
-          dart run rive_native:setup --verbose --clean --platform linux
+          dart run rive_native:setup --verbose --clean --build --platform linux
 
       - name: Run tests
         shell: bash

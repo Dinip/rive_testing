@@ -9,6 +9,6 @@ void main() {
       wrapper: noWrap(),
       surfaceSize: Size(500, 500),
     );
-    await screenMatchesGolden(tester, 'test', customPump: (t) => t.pump(Durations.extralong4));
+    await screenMatchesGolden(tester, 'golden', customPump: (t) => t.pump(Durations.extralong4));
   });
 }

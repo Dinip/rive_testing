@@ -15,6 +15,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libgl1-mesa-dev
+
       - name: Setup flutter
         uses: subosito/flutter-action@v2
         with: 

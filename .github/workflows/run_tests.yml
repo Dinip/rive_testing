@@ -1,0 +1,36 @@
+name: Run Tests
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  run_tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup flutter
+        uses: subosito/flutter-action@v2
+        with: 
+          flutter-version: 3.35.6
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          flutter pub get
+
+      - name: Setup Rive Native
+        shell: bash
+        run: |
+          dart run rive_native:setup --verbose --clean --platform linux
+
+      - name: Run tests
+        shell: bash
+        run: |
+          flutter test --no-pub --no-track-widget-creation --update-goldens

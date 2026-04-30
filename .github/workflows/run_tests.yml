@@ -31,7 +31,7 @@ jobs:
       - name: Setup Rive Native
         shell: bash
         run: |
-          dart run rive_native:setup --verbose --clean --build --platform linux
+          dart run rive_native:setup --verbose --clean --platform linux
 
       - name: Run tests
         shell: bash

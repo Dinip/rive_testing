@@ -37,12 +37,12 @@ jobs:
         shell: bash
         run: |
           # shortcut: dev.4 needs newer glibc, remove this when Rive ships a 24.04-compatible prebuilt.
-          glibc="$RUNNER_TEMP/glibc-2.43"
-          mkdir -p "$glibc"
-          docker run --rm ubuntu:26.04 tar -h -C /usr/lib/x86_64-linux-gnu -cf - \
-            ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libmvec.so.1 libdl.so.2 \
-            libpthread.so.0 librt.so.1 libresolv.so.2 libutil.so.1 libanl.so.1 \
-            | tar -xf - -C "$glibc"
+          package="$RUNNER_TEMP/libc6.deb"
+          curl -fsSL --retry 3 -o "$package" \
+            https://snapshot.ubuntu.com/ubuntu/20261120T000000Z/pool/main/g/glibc/libc6_2.43-2ubuntu2.7_amd64.deb
+          printf '%s  %s\n' be83aefc14597fba683031a520f303950a7338b95d74decbe625faa51c49933e "$package" | sha256sum -c -
+          dpkg-deb -x "$package" "$RUNNER_TEMP/glibc-2.43"
+          glibc="$RUNNER_TEMP/glibc-2.43/usr/lib/x86_64-linux-gnu"
           tester="$FLUTTER_ROOT/bin/cache/artifacts/engine/linux-x64/flutter_tester"
           rpath=$(patchelf --print-rpath "$tester")
           patchelf --set-interpreter "$glibc/ld-linux-x86-64.so.2" \

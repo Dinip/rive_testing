@@ -15,8 +15,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y clang ninja-build libgl-dev libgtk-3-dev
+      - name: Install OpenGL runtime
+        run: sudo apt-get update && sudo apt-get install -y libgl1
 
       - name: Setup flutter
         uses: subosito/flutter-action@v2
@@ -31,11 +31,7 @@ jobs:
       - name: Setup Rive Native
         shell: bash
         run: |
-          # The prebuilt dev.4 library requires glibc 2.43, newer than Ubuntu 24.04 provides.
-          dart run rive_native:setup --verbose --clean --build --platform linux
-
-      - name: Check Rive Native library
-        run: ldd -r build/rive_native/native/build/linux/bin/lib/debug_shared/librive_native.so
+          dart run rive_native:setup --verbose --clean --platform linux
 
       - name: Run tests
         shell: bash

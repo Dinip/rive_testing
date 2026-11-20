@@ -15,8 +15,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install OpenGL runtime
-        run: sudo apt-get update && sudo apt-get install -y libgl1
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgl1 patchelf
 
       - name: Setup flutter
         uses: subosito/flutter-action@v2
@@ -32,6 +32,22 @@ jobs:
         shell: bash
         run: |
           dart run rive_native:setup --verbose --clean --platform linux
+
+      - name: Use glibc 2.43 for Flutter tests
+        shell: bash
+        run: |
+          # shortcut: dev.4 needs newer glibc, remove this when Rive ships a 24.04-compatible prebuilt.
+          glibc="$RUNNER_TEMP/glibc-2.43"
+          mkdir -p "$glibc"
+          docker run --rm ubuntu:26.04 tar -h -C /usr/lib/x86_64-linux-gnu -cf - \
+            ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libmvec.so.1 libdl.so.2 \
+            libpthread.so.0 librt.so.1 libresolv.so.2 libutil.so.1 libanl.so.1 \
+            | tar -xf - -C "$glibc"
+          tester="$FLUTTER_ROOT/bin/cache/artifacts/engine/linux-x64/flutter_tester"
+          rpath=$(patchelf --print-rpath "$tester")
+          patchelf --set-interpreter "$glibc/ld-linux-x86-64.so.2" \
+            --force-rpath --set-rpath "$glibc${rpath:+:$rpath}" "$tester"
+          "$glibc/ld-linux-x86-64.so.2" --version
 
       - name: Run tests
         shell: bash

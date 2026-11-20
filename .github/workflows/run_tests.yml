@@ -15,9 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install OpenGL runtime
-        run: sudo apt-get update && sudo apt-get install -y libgl1
-
       - name: Setup flutter
         uses: subosito/flutter-action@v2
         with: 
@@ -33,23 +30,28 @@ jobs:
         run: |
           dart run rive_native:setup --verbose --clean --platform linux
 
-      - name: Use glibc 2.43 for Flutter tests
+      - name: Use newer native libraries for Flutter tests
         shell: bash
         run: |
-          # shortcut: dev.4 needs newer glibc, remove this when Rive ships a 24.04-compatible prebuilt.
+          # shortcut: dev.4 needs GLIBC_2.43 and GLIBCXX_3.4.32, remove this when Rive ships a 22.04-compatible prebuilt.
           package="$RUNNER_TEMP/libc6.deb"
+          runtime="$RUNNER_TEMP/rive-test-runtime"
           curl -fsSL --retry 3 -o "$package" \
             https://snapshot.ubuntu.com/ubuntu/20261120T000000Z/pool/main/g/glibc/libc6_2.43-2ubuntu2.7_amd64.deb
           printf '%s  %s\n' be83aefc14597fba683031a520f303950a7338b95d74decbe625faa51c49933e "$package" | sha256sum -c -
-          dpkg-deb -x "$package" "$RUNNER_TEMP/glibc-2.43"
-          glibc="$RUNNER_TEMP/glibc-2.43/usr/lib/x86_64-linux-gnu"
+          dpkg-deb -x "$package" "$runtime"
+
+          package="$RUNNER_TEMP/libstdc++6.deb"
+          curl -fsSL --retry 3 -o "$package" \
+            https://snapshot.ubuntu.com/ubuntu/20261120T000000Z/pool/main/g/gcc-14/libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb
+          printf '%s  %s\n' a51f8de7829211db961a31f02158058ad1a95f92ac6d0a5dff6350e2821c54c0 "$package" | sha256sum -c -
+          dpkg-deb -x "$package" "$runtime"
+
+          libs="$runtime/usr/lib/x86_64-linux-gnu"
           tester="$FLUTTER_ROOT/bin/cache/artifacts/engine/linux-x64/flutter_tester"
           rpath=$(patchelf --print-rpath "$tester")
-          patchelf --set-interpreter "$glibc/ld-linux-x86-64.so.2" \
-            --force-rpath --set-rpath "$glibc${rpath:+:$rpath}" "$tester"
-          "$glibc/ld-linux-x86-64.so.2" --version
-          "$glibc/ld-linux-x86-64.so.2" --library-path "$glibc" --list \
-            build/rive_native/native/build/linux/bin/lib/debug_shared/librive_native.so
+          patchelf --set-interpreter "$libs/ld-linux-x86-64.so.2" \
+            --force-rpath --set-rpath "$libs${rpath:+:$rpath}" "$tester"
 
       - name: Run tests
         shell: bash

@@ -8,7 +8,7 @@ on:
 jobs:
   run_tests:
     name: Run Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -18,7 +18,7 @@ jobs:
       - name: Setup flutter
         uses: subosito/flutter-action@v2
         with: 
-          flutter-version: 3.35.6
+          flutter-version: 3.47.8
 
       - name: Install dependencies
         shell: bash
@@ -29,6 +29,29 @@ jobs:
         shell: bash
         run: |
           dart run rive_native:setup --verbose --clean --platform linux
+
+      - name: Use newer native libraries for Flutter tests
+        shell: bash
+        run: |
+          # shortcut: dev.4 needs GLIBC_2.43 and GLIBCXX_3.4.32, remove this when Rive ships a 22.04-compatible prebuilt.
+          package="$RUNNER_TEMP/libc6.deb"
+          runtime="$RUNNER_TEMP/rive-test-runtime"
+          curl -fsSL --retry 3 -o "$package" \
+            https://snapshot.ubuntu.com/ubuntu/20261120T000000Z/pool/main/g/glibc/libc6_2.43-2ubuntu2.7_amd64.deb
+          printf '%s  %s\n' be83aefc14597fba683031a520f303950a7338b95d74decbe625faa51c49933e "$package" | sha256sum -c -
+          dpkg-deb -x "$package" "$runtime"
+
+          package="$RUNNER_TEMP/libstdc++6.deb"
+          curl -fsSL --retry 3 -o "$package" \
+            https://snapshot.ubuntu.com/ubuntu/20261120T000000Z/pool/main/g/gcc-14/libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb
+          printf '%s  %s\n' a51f8de7829211db961a31f02158058ad1a95f92ac6d0a5dff6350e2821c54c0 "$package" | sha256sum -c -
+          dpkg-deb -x "$package" "$runtime"
+
+          libs="$runtime/usr/lib/x86_64-linux-gnu"
+          tester="$FLUTTER_ROOT/bin/cache/artifacts/engine/linux-x64/flutter_tester"
+          rpath=$(patchelf --print-rpath "$tester")
+          patchelf --set-interpreter "$libs/ld-linux-x86-64.so.2" \
+            --force-rpath --set-rpath "$libs${rpath:+:$rpath}" "$tester"
 
       - name: Run tests
         shell: bash

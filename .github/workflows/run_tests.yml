@@ -15,6 +15,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install OpenGL runtime
+        run: sudo apt-get update && sudo apt-get install -y libgl1
+
       - name: Setup flutter
         uses: subosito/flutter-action@v2
         with: 
@@ -45,6 +48,8 @@ jobs:
           patchelf --set-interpreter "$glibc/ld-linux-x86-64.so.2" \
             --force-rpath --set-rpath "$glibc${rpath:+:$rpath}" "$tester"
           "$glibc/ld-linux-x86-64.so.2" --version
+          "$glibc/ld-linux-x86-64.so.2" --library-path "$glibc" --list \
+            build/rive_native/native/build/linux/bin/lib/debug_shared/librive_native.so
 
       - name: Run tests
         shell: bash

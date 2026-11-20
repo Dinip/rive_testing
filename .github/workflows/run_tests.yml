@@ -33,6 +33,9 @@ jobs:
         run: |
           dart run rive_native:setup --verbose --clean --platform linux
 
+      - name: Check Rive Native library
+        run: ldd -r build/rive_native/native/build/linux/bin/lib/debug_shared/librive_native.so
+
       - name: Run tests
         shell: bash
         run: |

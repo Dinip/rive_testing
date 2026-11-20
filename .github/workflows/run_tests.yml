@@ -15,9 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install test dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgl1 patchelf
-
       - name: Setup flutter
         uses: subosito/flutter-action@v2
         with: 
